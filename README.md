@@ -1,16 +1,111 @@
-# React + Vite
+# User-Centered Web-Based Medical Claim System with Hybrid Fraud Detection for People's Bank Staff and Pensioners
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Project Overview
 
-Currently, two official plugins are available:
+This project presents a user-centered web-based medical claim management system designed for People's Bank staff and pensioners. The system aims to improve the efficiency, transparency, and accuracy of the medical claim approval process by reducing manual work and introducing a hybrid fraud detection approach.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The system combines rule-based validation techniques with intelligent fraud detection methods to identify suspicious medical claim patterns while supporting reliable decision-making.
 
-## React Compiler
+## 🎯 Research Objectives
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- To develop a user-friendly web-based medical claim submission and approval system.
+- To digitize the existing manual medical claim workflow.
+- To improve fraud detection accuracy using a hybrid detection approach.
+- To enhance transparency between claim applicants and approval officers.
+- To evaluate the usability of the developed system using user-centered design principles.
 
-## Expanding the ESLint configuration
+## ✨ Main Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 👤 Claim Applicant (Staff/Pensioner)
+- Submit medical claim applications online.
+- Upload supporting documents.
+- Track claim status.
+- View claim history.
+
+### 👨‍💼 Staff Officer
+- Review submitted claims.
+- Validate claim information.
+- Manage claim approval workflow.
+
+### 👨‍💼 Manager
+- Review and approve/reject claims.
+- Monitor claim activities.
+
+### 🔍 Hybrid Fraud Detection
+- Rule-based validation for suspicious claim patterns.
+- Detection of abnormal claim behaviors.
+- Support for accurate and explainable fraud identification.
+
+## 🛠️ Technologies Used
+
+### Frontend
+- React.js
+- Vite
+- JavaScript
+- CSS
+- Figma (UI/UX Design)
+
+### Backend
+- Flask / Python
+- REST API
+
+### Database
+- MySQL
+
+### Data Processing & Detection
+- Python
+- Scikit-learn
+- Synthetic dataset generation
+
+## 📂 Project Structure
+medicalclaimsystem/
+│
+├── src/
+│ ├── components/
+│ ├── pages/
+│ ├── assets/
+│ └── styles/
+│
+├── public/
+├── package.json
+└── README.md
+
+## 🚀 Installation and Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Chanduni-Bootawatta/medicalclaimsystem.git
+```
+
+Navigate to the project folder:
+
+```bash
+cd medicalclaimsystem
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
+
+```bash
+npm run dev
+```
+📊 Research Scope
+
+The system focuses on medical claim processing within selected People's Bank branches in Central Province, Sri Lanka.
+
+🔒 Data Privacy
+
+The dataset used for system development is prepared for research purposes. No confidential personal information is included.
+
+👩‍💻 Author
+
+Chanduni Bootawatta
+
+Final Year Research Project
+Software Engineering Undergraduate
