@@ -1,0 +1,44 @@
+/* APPROVE BUTTON */
+.btn-action-approve {
+    background-color: #8a2b2b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .btn-action-approve:hover {
+    opacity: 0.9;
+  }
+  
+  /* REJECT BUTTON */
+  .btn-action-reject {
+    background-color: white;
+    color: black;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .btn-action-reject:hover {
+    opacity: 0.9;
+  }
+  
+  /* CLOSE BUTTON */
+  .btn-action-close {
+    background-color: #eabd63;
+    color: black;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .btn-action-close:hover {
+    opacity: 0.9;
+  }

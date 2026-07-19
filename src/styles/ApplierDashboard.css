@@ -1,0 +1,916 @@
+.dashboard-layout {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+}
+
+
+/* MAIN CONTENT */
+
+.dashboard-content {
+    flex: 1;
+    background: #fffefb21;
+
+    border-radius: 12px;
+    padding: 25px;
+    min-height: 650px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* SIDEBAR MENU FONT SIZE */
+
+.sidebar-container h3 {
+    font-size: 24px;
+}
+
+
+.menu-links li {
+    font-size: 19px;
+    padding: 18px 20px;
+    font-weight: 500;
+}
+
+
+.menu-links li:hover {
+    font-size: 19px;
+}
+
+
+.active-link {
+    font-size: 19px;
+    font-weight: 600;
+}
+
+
+
+/* WELCOME */
+
+.welcome-box {
+    background: linear-gradient(135deg,#7a1f2b,#a33b48);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+
+.welcome-box h2 {
+    margin: 0;
+    font-size: 26px;
+}
+
+
+.welcome-box p {
+    margin-top: 10px;
+    opacity: 0.9;
+}
+/* ========================================= */
+/* PREMIUM BANKING DASHBOARD SUMMARY CARDS */
+/* ========================================= */
+
+.summary-container{
+
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-bottom:25px;
+
+}
+
+
+.summary-card{
+
+    position:relative;
+
+    background:#ffffff;
+
+    border-radius:12px;
+
+    padding:16px 18px;
+
+    min-height:90px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+    border:1px solid #ececec;
+
+    transition:.35s;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+}
+
+
+.summary-card:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:0 12px 28px rgba(0,0,0,.15);
+
+}
+
+
+/* LEFT COLOURED STRIP */
+
+.summary-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    top:0;
+
+    width:6px;
+
+    height:100%;
+
+    border-radius:14px 0 0 14px;
+
+}
+
+
+/* Heading */
+
+.summary-card h3{
+
+    margin:0;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    letter-spacing:.3px;
+
+}
+
+
+/* Number */
+
+.summary-card p{
+
+    margin-top:8px;
+
+    font-size:26px;
+
+    font-weight:700;
+
+}
+
+
+/* ========================= */
+/* TOTAL CLAIMS */
+/* ========================= */
+
+.summary-card:nth-child(1){
+
+    background:linear-gradient(to right,#fafafa,#ffffff);
+
+}
+
+.summary-card:nth-child(1)::before{
+
+    background:#8b2626;
+
+}
+
+.summary-card:nth-child(1) h3{
+
+    color:#666;
+
+}
+
+.summary-card:nth-child(1) p{
+
+    color:#8b2626;
+
+}
+
+
+
+/* ========================= */
+/* PENDING */
+/* ========================= */
+
+.summary-card:nth-child(2){
+
+    background:linear-gradient(to right,#fff6ea,#ffffff);
+
+}
+
+.summary-card:nth-child(2)::before{
+
+    background:#f59e0b;
+
+}
+
+.summary-card:nth-child(2) h3{
+
+    color:#b76a00;
+
+}
+
+.summary-card:nth-child(2) p{
+
+    color:#d97706;
+
+}
+
+
+
+/* ========================= */
+/* APPROVED */
+/* ========================= */
+
+.summary-card:nth-child(3){
+
+    background:linear-gradient(to right,#eefcf4,#ffffff);
+
+}
+
+.summary-card:nth-child(3)::before{
+
+    background:#16a34a;
+
+}
+
+.summary-card:nth-child(3) h3{
+
+    color:#177245;
+
+}
+
+.summary-card:nth-child(3) p{
+
+    color:#16834b;
+
+}
+
+
+
+/* ========================= */
+/* PAID */
+/* ========================= */
+
+.summary-card:nth-child(4){
+
+    background:linear-gradient(to right,#fffbe8,#ffffff);
+
+}
+
+.summary-card:nth-child(4)::before{
+
+    background:#d4af37;
+
+}
+
+.summary-card:nth-child(4) h3{
+
+    color:#8b6b00;
+
+}
+
+.summary-card:nth-child(4) p{
+
+    color:#9a7200;
+
+}
+
+
+
+/* RESPONSIVE */
+
+@media(max-width:900px){
+
+.summary-container{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+
+@media(max-width:600px){
+
+.summary-container{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+
+
+/* QUICK ACTION */
+
+.quick-action {
+
+    border:1px solid #ddd;
+    padding:25px;
+    border-radius:12px;
+    background:#fafafa;
+
+}
+
+
+.quick-action h3 {
+
+    margin-top:0;
+
+}
+
+
+.new-claim-btn {
+
+    background:#f2d603;
+ 
+    border:none;
+    padding:12px 25px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:15px;
+    color:#651b22;
+    font-display: bold,center;
+
+}
+
+
+.new-claim-btn:hover {
+
+    background:#651b22;
+
+}
+
+
+
+
+
+
+
+/* PANELS */
+
+.panel {
+
+    background:white;
+    border-radius:10px;
+
+}
+
+
+.panel h2 {
+
+    margin-bottom:20px;
+
+}
+
+
+
+
+
+
+
+/* MAIL BOX STYLE */
+
+.mail-layout {
+
+    display:flex;
+    border:1px solid #ddd;
+    border-radius:10px;
+    overflow:hidden;
+    height:430px;
+
+}
+
+
+
+.mail-list {
+
+    width:35%;
+    border-right:1px solid #ddd;
+    overflow-y:auto;
+
+}
+
+
+
+.mail-item {
+
+    padding:18px;
+    border-bottom:1px solid #eee;
+    cursor:pointer;
+    transition:0.2s;
+
+}
+
+
+
+.mail-item:hover {
+
+    background:#f8eeee;
+
+}
+
+
+.mail-item h4 {
+
+    margin:0;
+    color:#8b2626;
+
+}
+
+
+.mail-item p {
+
+    margin:8px 0;
+    font-size:14px;
+
+}
+
+
+.mail-item span {
+
+    font-size:12px;
+    color:#777;
+
+}
+
+
+
+
+
+
+.mail-preview {
+
+    flex:1;
+    padding:25px;
+
+}
+
+
+.mail-preview h3 {
+
+    color:#8b2626;
+
+}
+
+
+
+
+
+
+
+
+
+/* TABLE */
+
+.claims-table {
+
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+
+}
+
+
+
+.claims-table th {
+
+    background:#8b2626;
+    color:white;
+    padding:14px;
+    text-align:left;
+
+}
+
+
+
+.claims-table td {
+
+    padding:14px;
+    border-bottom:1px solid #eee;
+
+}
+
+
+
+.claims-table tr:hover {
+
+    background:#faf5f5;
+
+}
+
+
+
+
+
+
+
+/* RESPONSIVE */
+
+@media(max-width:900px){
+
+
+.summary-container {
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+
+.mail-layout {
+
+flex-direction:column;
+
+}
+
+
+.mail-list {
+
+width:100%;
+
+}
+
+
+}
+
+/* ============================= */
+/* CLAIMS & PAYMENTS TABLE FONT */
+/* ============================= */
+
+.claims-table th {
+    font-size: 18px;
+    font-weight: 700;
+    padding: 16px;
+}
+
+
+.claims-table td {
+    font-size: 17px;
+    font-weight: 500;
+    padding: 16px;
+}
+
+
+/* Make table values stand out */
+
+.claims-table td:first-child {
+    font-weight: 700;
+    color: #8b2626;
+}
+
+
+
+/* ============================= */
+/* NOTIFICATION INBOX FONT */
+/* ============================= */
+
+
+.mail-item h4 {
+    font-size: 19px;
+    font-weight: 700;
+}
+
+
+.mail-item p {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+
+.mail-item span {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+
+
+.mail-preview h3 {
+    font-size: 25px;
+    font-weight: 700;
+}
+
+
+.mail-preview p {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.7;
+}
+
+
+
+/* Panel titles */
+
+.panel h2 {
+    font-size: 28px;
+    font-weight: 700;
+}
+/* ============================= */
+/* APPLICATION FORM FONT SIZE */
+/* ============================= */
+
+
+.overlay-box2 {
+
+    font-size: 17px;
+
+}
+
+
+
+/* Section headings */
+
+.overlay-box2 h3 {
+
+    font-size: 22px;
+    font-weight: 700;
+    color: #8b2626;
+    margin-bottom: 18px;
+
+}
+
+
+
+/* Input fields */
+
+.overlay-box2 input,
+.overlay-box2 select {
+
+    font-size: 17px;
+    padding: 12px;
+
+}
+
+
+
+/* Input placeholder */
+
+.overlay-box2 input::placeholder {
+
+    font-size: 16px;
+
+}
+
+
+
+/* Dropdown text */
+
+.overlay-box2 select {
+
+    font-weight: 500;
+
+}
+
+
+
+/* File upload labels */
+
+.file-input-group label {
+
+    font-size: 17px;
+    font-weight: 600;
+
+}
+
+
+
+/* Buttons */
+
+.next-btn,
+.back-btn,
+.draft-btn,
+.submit-btn {
+
+    font-size: 17px;
+    font-weight: 600;
+
+}
+.new-claim-btn {
+
+  background:#8e0613;   /* Gold */
+    color:white;        /* Maroon text */
+
+    border:none;
+    padding:14px 32px;
+
+    border-radius:8px;
+    cursor:pointer;
+
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.3px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    line-height:1;
+
+    transition:0.3s;
+
+}
+
+
+.new-claim-btn:hover {
+
+    background:#651b22;   /* darker gold */
+    color:white;        /* keep maroon text */
+
+
+    transform:translateY(-2px);
+
+}
+/* SUPPORT & HELP CENTER */
+
+.sidebar-bottom {
+
+    margin-top:auto;
+    border-top:1px solid #ddd;
+    padding-top:20px;
+
+}
+
+
+
+.sidebar-bottom div {
+
+    padding:15px 18px;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:#9b1c31; /* Crimson red */
+
+    cursor:pointer;
+
+    transition:0.3s;
+
+}
+
+
+
+.sidebar-bottom div::before {
+
+
+
+    font-size:20px;
+
+    font-weight:800;
+
+    color:#9b1c31;
+
+}
+
+
+
+.sidebar-bottom div:hover {
+
+    background:#fbeaea;
+
+    border-radius:8px;
+
+    color:#7a1023;
+
+}
+/* ============================= */
+/* NOTIFICATION BELL BADGE */
+/* ============================= */
+
+
+.notification-wrapper {
+
+    position:relative;
+
+    display:inline-flex;
+
+    margin-left:12px;
+
+    align-items:center;
+
+}
+
+
+
+/* Bell Icon */
+
+.bell-icon {
+
+    width:18px;
+
+    height:18px;
+
+    background:#9b1c31;
+
+    border-radius:10px 10px 4px 4px;
+
+    position:relative;
+
+    display:inline-block;
+
+}
+
+
+
+.bell-icon::before {
+
+    content:"";
+
+    position:absolute;
+
+    top:-5px;
+
+    left:4px;
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:50%;
+
+    background:#9b1c31;
+
+}
+
+
+
+.bell-icon::after {
+
+    content:"";
+
+    position:absolute;
+
+    bottom:-5px;
+
+    left:5px;
+
+    width:8px;
+
+    height:4px;
+
+    border-radius:50%;
+
+    background:#9b1c31;
+
+}
+
+
+
+/* Notification Number */
+
+
+.notification-count {
+
+    position:absolute;
+
+    top:-12px;
+
+    right:-12px;
+
+    background:#dc2626;
+
+    color:white;
+
+    font-size:11px;
+
+    font-weight:800;
+
+    width:20px;
+
+    height:20px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border:2px solid white;
+
+}
+
+
+
+/* Hover Animation */
+
+.notification-wrapper:hover .bell-icon {
+
+    transform:rotate(15deg);
+
+}
+
+
+.bell-icon {
+
+    transition:0.3s;
+
+}
