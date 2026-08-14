@@ -52,23 +52,83 @@ The system combines rule-based validation techniques with intelligent fraud dete
 ### Database
 - MySQL
 
+Database Tables
+
+-users
+-claims
+-claim_reviews
+-attachments
+-fraud_checks
+-approvals
+-notifications
+-payments
+
 ### Data Processing & Detection
 - Python
 - Scikit-learn
 - Synthetic dataset generation
 
 ## 📂 Project Structure
-medicalclaimsystem/
+medicalclaimsystem
 │
-├── src/
-│ ├── components/
-│ ├── pages/
-│ ├── assets/
-│ └── styles/
+├── src                         # React Frontend
+│   ├── components
+│   ├── pages
+│   ├── assets
+│   ├── styles
+│   ├── App.jsx
+│   └── main.jsx
 │
-├── public/
+├── backend                     # Flask Backend
+│   │
+│   ├── app.py                  # Flask application entry point
+│   ├── database.py             # MySQL database connection
+│   │
+│   └── routes
+│       ├── auth.py             # Login and authentication APIs
+│       ├── claims.py           # Claim submission APIs
+│       ├── approvals.py         # Approval workflow APIs
+│       └── users.py             # User management APIs
+│
+├── public
 ├── package.json
+├── vite.config.js
 └── README.md
+
+
+ # Approval Workflow
+
+APPLIER (Staff / Pensioner)
+          |
+          | Submit Medical Claim
+          ↓
+    STAFF OFFICER
+          |
+          | Check documents
+          | Run fraud detection
+          |
+          | If suspicious → Reject claim
+          |
+          | If valid → Send to Manager
+          ↓
+        MANAGER
+          |
+          | Approve claim
+          ↓
+   STAFF OFFICER
+          |
+          | Check claim category/grade
+          |
+          | Send for A/B approval
+          ↓
+A OFFICER / B OFFICER
+          |
+          | Approve according to grade
+          ↓
+      PAYMENT
+          |
+          ↓
+        PAID
 
 ## 🚀 Installation and Setup
 

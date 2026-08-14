@@ -67,6 +67,7 @@ const StaffOfficer = () => {
   
   // 2. State to track the active/clicked claim details
   const [selectedClaim, setSelectedClaim] = useState(null);
+  const [fraudResult, setFraudResult] = useState(null);
 
   const updateClaimStatus = (newStatus) => {
     if (!selectedClaim) return;
@@ -121,8 +122,22 @@ const StaffOfficer = () => {
     setSearchQuery("");
     setAppliedSearch("");
     setSelectedClaim(null);
+    setFraudResult(null);
   };
   
+  const checkFraud = () => {
+    if (!selectedClaim) return;
+  
+    // Temporary mock result (later Flask API will replace this)
+    const result = {
+      score: 15,
+      status: "Low Risk",
+      reason: "Claim amount and documents appear normal"
+    };
+  
+    setFraudResult(result);
+  };
+
   return (
     <div className="home-container">
       {/* Header */}
@@ -261,7 +276,10 @@ const StaffOfficer = () => {
               {filteredClaims.map((claim) => (
                   <tr 
                     key={claim.id} 
-                    onClick={() => setSelectedClaim(claim)}
+                    onClick={() => {
+                      setSelectedClaim(claim);
+                      setFraudResult(null);
+                    }}
                     className={`table-row-clickable ${selectedClaim?.id === claim.id ? "active-row" : ""}`}
                     style={{ cursor: "pointer" }}
                   >
@@ -318,6 +336,21 @@ const StaffOfficer = () => {
 
                   {/* Action Buttons Group */}
                   <div className="details-actions" style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+                  <button
+ 
+ className="btn-action-fraud"
+  onClick={checkFraud}
+  style={{
+    backgroundColor: "#2563eb",
+    color: "#fff",
+    border: "none",
+    padding: "8px 15px",
+    borderRadius: "4px",
+    cursor: "pointer"
+  }}
+>
+  🔍 Check Fraud
+</button>
   <button
     className="btn-action-approve"
     onClick={() => updateClaimStatus("Approved")}
@@ -365,6 +398,32 @@ const StaffOfficer = () => {
         OK
       </button>
     </div>
+  </div>
+)}
+
+{fraudResult && (
+  <div 
+    style={{
+      marginTop:"20px",
+      padding:"15px",
+      background:"#f5f7ff",
+      borderRadius:"8px",
+      border:"1px solid #ddd"
+    }}
+  >
+    <h3>Fraud Detection Result</h3>
+
+    <p>
+      <strong>Fraud Score:</strong> {fraudResult.score}%
+    </p>
+
+    <p>
+      <strong>Status:</strong> {fraudResult.status}
+    </p>
+
+    <p>
+      <strong>Reason:</strong> {fraudResult.reason}
+    </p>
   </div>
 )}
                 </div>
