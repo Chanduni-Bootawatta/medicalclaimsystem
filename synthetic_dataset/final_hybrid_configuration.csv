@@ -1,0 +1,2 @@
+Rule Weight,ML Weight,Threshold,Accuracy,Precision,Recall,F1 Score
+0.2,0.8,50.0,0.9485,0.7888563049853372,0.8966666666666666,0.8393135725429017

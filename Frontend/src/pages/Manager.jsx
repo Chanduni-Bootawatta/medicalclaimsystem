@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Home.css";
 import "../styles/StaffOfficer.css";
@@ -9,79 +9,107 @@ import logo from "../assets/logo.png";
 const Manager = () => {
   const navigate = useNavigate();
 
-  // 1. Expanded Mock data with the extra details shown in your design screenshot
-  const [claims, setClaims] = useState([
-    { 
-      id: "CLM-001", 
-      serviceNo: "SVC123456", 
-      name: "K. M. Perera", 
-      category: "A-1", 
-      date: "2025-10-01", 
-      status: "Pending",
-      account: "ACC0012345",
-      gradeBranch: "B-Grade / Colombo",
-      forWho: "Self",
-      relation: "Employee",
-      period: "2025-09-10 to 2025-09-20",
-      doctor: "Dr. S. Samaraweera",
-      attachments: [{ type: "pdf", name: "Open PDF" }]
-    },
-    { 
-      id: "CLM-002", 
-      serviceNo: "SVC999888", 
-      name: "A. R. Jayawardena", 
-      category: "C", 
-      date: "2025-09-28", 
-      status: "Approved",
-      account: "ACC0099887",
-      gradeBranch: "A-Grade / Kandy",
-      forWho: "Spouse",
-      relation: "Wife",
-      period: "2025-09-01 to 2025-09-30",
-      doctor: "Dr. H.T. Kumar",
-      attachments: [{ type: "pdf", name: "Open PDF" }, { type: "image", name: "asset.jpg" }]
-    },
-    { 
-      id: "CLM-003", 
-      serviceNo: "SVC654321", 
-      name: "N. A. Silva", 
-      category: "B-3", 
-      date: "2025-10-02", 
-      status: "Sent",
-      account: "ACC0076543",
-      gradeBranch: "C-Grade / Galle",
-      forWho: "Child",
-      relation: "Son",
-      period: "2025-09-15 to 2025-09-22",
-      doctor: "Dr. R. Perera",
-      attachments: [{ type: "image", name: "receipt.jpg" }]
+const [claims, setClaims] = useState([]);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchClaims = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/claims"
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error("Failed to load claims");
+      }
+
+      const managerClaims = data
+        .filter((claim) => claim.status === "MANAGER_REVIEW")
+        .map((claim) => ({
+          id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+          claimId: claim.claim_id,
+          serviceNo: claim.service_no,
+          name: claim.full_name || "Unknown",
+          category: claim.category,
+          date: claim.submitted_date || "",
+          status: "Pending",
+          account: claim.account_no,
+          gradeBranch: `${claim.grade} / ${claim.branch}`,
+          forWho: claim.claim_for,
+          relation: claim.relationship,
+          period: claim.treatment_period,
+          doctor: claim.doctor_name,
+          claimAmount: claim.claim_amount,
+          attachments: []
+        }));
+
+      setClaims(managerClaims);
+
+    } catch (error) {
+      console.error("Error loading manager claims:", error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  fetchClaims();
+}, []);
+
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");       // typing
   const [appliedSearch, setAppliedSearch] = useState("");   // actual search
   const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
   
   // 2. State to track the active/clicked claim details
   const [selectedClaim, setSelectedClaim] = useState(null);
-
-  const updateClaimStatus = (newStatus) => {
-    if (!selectedClaim) return;
+  const updateManagerClaimStatus = async (action) => {
+    if (!selectedClaim) return false;
   
-    setClaims((prevClaims) =>
-      prevClaims.map((claim) =>
-        claim.id === selectedClaim.id
-          ? { ...claim, status: newStatus }
-          : claim
-      )
-    );
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/claims/${selectedClaim.claimId}/manager-action`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: action,
+          }),
+        }
+      );
   
-    setSelectedClaim((prev) => ({
-      ...prev,
-      status: newStatus,
-    }));
+      const data = await response.json();
+  
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Manager action failed"
+        );
+      }
+  
+      console.log("MANAGER ACTION RESULT:", data);
+  
+      // Remove processed claim from Manager Inbox
+      setClaims((prevClaims) =>
+        prevClaims.filter(
+          (claim) => claim.claimId !== selectedClaim.claimId
+        )
+      );
+  
+      setSelectedClaim(null);
+  
+      return true;
+  
+    } catch (error) {
+      console.error("Manager action error:", error);
+      alert("Unable to update claim status.");
+      return false;
+    }
   };
 
   const getStatusStyle = (status) => {
@@ -160,10 +188,13 @@ const Manager = () => {
             <div className="filter-group">
               <label>Category</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="A-1">A-1</option>
-                <option value="B-3">B-3</option>
-                <option value="C">C</option>
+              <option value="All">All</option>
+              <option value="OPD">OPD</option>
+              <option value="Dental">Dental</option>
+              <option value="Eye Care">Eye Care</option>
+              <option value="Surgery">Surgery</option>
+              <option value="Hospitalization">Hospitalization</option>
+              <option value="Laboratory">Laboratory</option>
               </select>
             </div>
 
@@ -265,7 +296,10 @@ const Manager = () => {
                     <div><strong>Name:</strong> {selectedClaim.name}</div>
                     <div><strong>Grade / Branch:</strong> {selectedClaim.gradeBranch}</div>
                   </div>
-                  
+                  <div>
+                  <strong>Applicant Claim Amount:</strong>{" "}
+                   Rs. {Number(selectedClaim.claimAmount || 0).toLocaleString()}
+                  </div>
                   <hr style={{ border: "0.5px solid #eee", margin: "15px 0" }} />
                   
                   <div className="details-data-grid" style={{ lineHeight: "1.8" }}>
@@ -289,18 +323,27 @@ const Manager = () => {
   
 
                   <button
-  className="btn-action-approve"
-  onClick={() => {
-    updateClaimStatus("Approved");
-    setShowPopup(true);
-  }}
->
-  Approve
-</button>
-
-<button
+                 className="btn-action-approve"
+                 onClick={async () => {
+                   const success = await updateManagerClaimStatus("APPROVE");
+                
+                   if (success) {
+                     setShowPopup(true);
+                   }
+                 }}
+                >
+                 Approve
+                </button>
+                <button
   className="btn-action-reject"
-  onClick={() => updateClaimStatus("Rejected")}
+  onClick={async () => {
+    const success = await updateManagerClaimStatus("REJECT");
+
+    if (success) {
+      setPopupMessage("Claim has been rejected successfully.");
+      setShowPopup(true);
+    }
+  }}
 >
   Reject
 </button>
@@ -312,15 +355,20 @@ const Manager = () => {
   >
     Close
   </button>
-</div> {showPopup && (
+</div>
+{showPopup && (
   <div className="popup-overlay">
     <div className="popup-box">
-    <h3>Approved Successfully</h3>
-    <p>Claim approved and sent to Staff Officer.</p>
+      <h3>Action Completed</h3>
+
+      <p>{popupMessage}</p>
 
       <button
         className="popup-btn"
-        onClick={() => setShowPopup(false)}
+        onClick={() => {
+          setShowPopup(false);
+          setPopupMessage("");
+        }}
       >
         OK
       </button>

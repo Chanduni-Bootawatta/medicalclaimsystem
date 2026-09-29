@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/Home.css";
@@ -9,83 +9,117 @@ import logo from "../assets/logo.png";
 const StaffOfficer = () => {
   const navigate = useNavigate();
 
-  // 1. Expanded Mock data with the extra details shown in your design screenshot
-  const [claims, setClaims] = useState([
-    { 
-      id: "CLM-001", 
-      serviceNo: "SVC123456", 
-      name: "K. M. Perera", 
-      category: "A-1", 
-      date: "2025-10-01", 
-      status: "Pending",
-      account: "ACC0012345",
-      gradeBranch: "B-Grade / Colombo",
-      forWho: "Self",
-      relation: "Employee",
-      period: "2025-09-10 to 2025-09-20",
-      doctor: "Dr. S. Samaraweera",
-      attachments: [{ type: "pdf", name: "Open PDF" }]
-    },
-    { 
-      id: "CLM-002", 
-      serviceNo: "SVC999888", 
-      name: "A. R. Jayawardena", 
-      category: "C", 
-      date: "2025-09-28", 
-      status: "Approved",
-      account: "ACC0099887",
-      gradeBranch: "A-Grade / Kandy",
-      forWho: "Spouse",
-      relation: "Wife",
-      period: "2025-09-01 to 2025-09-30",
-      doctor: "Dr. H.T. Kumar",
-      attachments: [{ type: "pdf", name: "Open PDF" }, { type: "image", name: "asset.jpg" }]
-    },
-    { 
-      id: "CLM-003", 
-      serviceNo: "SVC654321", 
-      name: "N. A. Silva", 
-      category: "B-3", 
-      date: "2025-10-02", 
-      status: "Sent",
-      account: "ACC0076543",
-      gradeBranch: "C-Grade / Galle",
-      forWho: "Child",
-      relation: "Son",
-      period: "2025-09-15 to 2025-09-22",
-      doctor: "Dr. R. Perera",
-      attachments: [{ type: "image", name: "receipt.jpg" }]
-    }
-  ]);
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");       // typing
   const [appliedSearch, setAppliedSearch] = useState("");   // actual search
   const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchClaims = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:5000/claims"
+        );
+  
+        const data = await response.json();
+
+        console.log("CLAIMS FROM BACKEND:", data);
+  
+        if (!response.ok) {
+          throw new Error("Failed to load claims");
+        }
+  
+        const formattedClaims = data.map((claim) => ({
+          id: claim.claim_id,
+          serviceNo: claim.service_no,
+          name: claim.full_name || "Unknown",
+          category: claim.category,
+          date: claim.submitted_date || "",
+          status: claim.status || "PENDING",
+          account: claim.account_no,
+          gradeBranch: `${claim.grade} / ${claim.branch}`,
+          forWho: claim.claim_for,
+          relation: claim.relationship,
+          period: claim.treatment_period,
+          doctor: claim.doctor_name,
+          claimAmount: claim.claim_amount,
+          attachments: []
+        }));
+  
+        setClaims(formattedClaims);
+  
+      } catch (error) {
+        console.error("Error loading claims:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchClaims();
+  }, []);
   
   // 2. State to track the active/clicked claim details
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [fraudResult, setFraudResult] = useState(null);
 
-  const updateClaimStatus = (newStatus) => {
+  const updateClaimStatus = async (action) => {
     if (!selectedClaim) return;
   
-    setClaims((prevClaims) =>
-      prevClaims.map((claim) =>
-        claim.id === selectedClaim.id
-          ? { ...claim, status: newStatus }
-          : claim
-      )
-    );
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/claims/${selectedClaim.id}/staff-action`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: action,
+          }),
+        }
+      );
   
-    setSelectedClaim((prev) => ({
-      ...prev,
-      status: newStatus,
-    }));
+      const data = await response.json();
+  
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Staff action failed"
+        );
+      }
+  
+      // Update the claim in the React interface
+      setClaims((prevClaims) =>
+        prevClaims.map((claim) =>
+          claim.id === selectedClaim.id
+            ? {
+                ...claim,
+                status: data.status,
+              }
+            : claim
+        )
+      );
+  
+      setSelectedClaim((prev) => ({
+        ...prev,
+        status: data.status,
+      }));
+  
+      console.log("STAFF ACTION RESULT:", data);
+      return true;
+  
+    } catch (error) {
+      console.error("Staff action error:", error);
+      alert("Unable to update claim status.");
+      return false;
+    }
   };
-
   const getStatusStyle = (status) => {
     switch (status) {
       case "Pending":
@@ -125,19 +159,48 @@ const StaffOfficer = () => {
     setFraudResult(null);
   };
   
-  const checkFraud = () => {
+  
+  
+  const checkFraud = async () => {
     if (!selectedClaim) return;
   
-    // Temporary mock result (later Flask API will replace this)
-    const result = {
-      score: 15,
-      status: "Low Risk",
-      reason: "Claim amount and documents appear normal"
-    };
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/claims/${selectedClaim.id}/fraud-check`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prescription_provided: 1,
+            medical_bills_provided: 1,
+            reports_provided: 1,
+            document_mismatch: 0,
+          }),
+        }
+      );
   
-    setFraudResult(result);
+      const data = await response.json();
+  
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Fraud detection failed"
+        );
+      }
+  
+      setFraudResult(data);
+  
+    } catch (error) {
+      console.error("Fraud detection error:", error);
+  
+      setFraudResult({
+        fraud_status: "ERROR",
+        risk_level: "Error",
+        message: "Unable to perform fraud detection."
+      });
+    }
   };
-
   return (
     <div className="home-container">
       {/* Header */}
@@ -174,12 +237,6 @@ const StaffOfficer = () => {
   Manager Approvals
 </li>
 
-<li
-  className={location.pathname === "/reversed-claims" ? "active-link" : ""}
-  onClick={() => navigate("/reversed-claims")}
->
-  Reversed Claims
-</li>
 
 <li
   className={location.pathname === "/ab-approvals" ? "active-link" : ""}
@@ -207,10 +264,13 @@ const StaffOfficer = () => {
             <div className="filter-group">
               <label>Category</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="A-1">A-1</option>
-                <option value="B-3">B-3</option>
-                <option value="C">C</option>
+              <option value="All">All</option>
+              <option value="OPD">OPD</option>
+              <option value="Dental">Dental</option>
+              <option value="Eye Care">Eye Care</option>
+              <option value="Surgery">Surgery</option>
+              <option value="Hospitalization">Hospitalization</option>
+              <option value="Laboratory">Laboratory</option>
               </select>
             </div>
 
@@ -275,11 +335,30 @@ const StaffOfficer = () => {
               <tbody>
               {filteredClaims.map((claim) => (
                   <tr 
-                    key={claim.id} 
-                    onClick={() => {
-                      setSelectedClaim(claim);
-                      setFraudResult(null);
-                    }}
+                  key={claim.id} 
+                  onClick={async () => {
+                    setSelectedClaim(claim);
+                    setFraudResult(null);
+                
+                    try {
+                      const response = await fetch(
+                        `http://127.0.0.1:5000/attachments/${claim.id}`
+                      );
+                
+                      const data = await response.json();
+
+console.log("ATTACHMENT RESPONSE:", data);
+
+if (data.success) {
+  setSelectedClaim({
+    ...claim,
+    attachments: data.attachments
+  });
+} 
+                    } catch (error) {
+                      console.error("Error loading attachments:", error);
+                    }
+                  }}
                     className={`table-row-clickable ${selectedClaim?.id === claim.id ? "active-row" : ""}`}
                     style={{ cursor: "pointer" }}
                   >
@@ -310,11 +389,27 @@ const StaffOfficer = () => {
                   <p className="details-meta-id">ID: {selectedClaim.id} • Submitted: {selectedClaim.date}</p>
                   
                   <div className="details-data-grid" style={{ lineHeight: "1.8", margin: "15px 0" }}>
-                    <div><strong>Service No:</strong> {selectedClaim.serviceNo}</div>
-                    <div><strong>Account:</strong> {selectedClaim.account}</div>
-                    <div><strong>Name:</strong> {selectedClaim.name}</div>
-                    <div><strong>Grade / Branch:</strong> {selectedClaim.gradeBranch}</div>
-                  </div>
+  <div><strong>Service No:</strong> {selectedClaim.serviceNo}</div>
+  <div><strong>Account:</strong> {selectedClaim.account}</div>
+  <div><strong>Name:</strong> {selectedClaim.name}</div>
+  <div><strong>Grade / Branch:</strong> {selectedClaim.gradeBranch}</div>
+</div>
+
+<div
+  style={{
+    marginTop: "15px",
+    padding: "12px 15px",
+    backgroundColor: "#f5f7ff",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    fontSize: "17px"
+  }}
+>
+  <strong>Applicant Claim Amount:</strong>{" "}
+  <span style={{ fontWeight: "bold" }}>
+    Rs. {Number(selectedClaim.claimAmount || 0).toLocaleString()}
+  </span>
+</div>
                   
                   <hr style={{ border: "0.5px solid #eee", margin: "15px 0" }} />
                   
@@ -323,6 +418,9 @@ const StaffOfficer = () => {
                     <div><strong>Period:</strong> {selectedClaim.period}</div>
                     <div><strong>Doctor:</strong> {selectedClaim.doctor}</div>
                     <div><strong>Category:</strong> {selectedClaim.category}</div>
+                   
+
+              
                   </div>
 
                   {/* Notes Textarea */}
@@ -351,36 +449,81 @@ const StaffOfficer = () => {
 >
   🔍 Check Fraud
 </button>
-  <button
-    className="btn-action-approve"
-    onClick={() => updateClaimStatus("Approved")}
-    style={{ backgroundColor: "#8a2b2b", color: "#fff", border: "none", padding: "8px 15px", borderRadius: "4px", cursor: "pointer" }}
-  >
-    Approved
-  </button>
+<button
+  className="btn-action-approve"
+  onClick={async () => {
+    const success = await updateClaimStatus("APPROVE");
 
-  <button
-    className="btn-action-reject"
-    onClick={() => updateClaimStatus("Rejected")}
-    style={{ backgroundColor: "#fff", color: "#333", border: "1px solid #ccc", padding: "8px 15px", borderRadius: "4px", cursor: "pointer" }}
-  >
-    Reject
-  </button>
-
-  <button
-    className="btn-action-forward"
-    onClick={() => {
-      updateClaimStatus("Sent");
+    if (success) {
+      setPopupMessage("Claim has been approved successfully.");
       setShowPopup(true);
-    }}
-    style={{ backgroundColor: "#f1a80a", color: "#000", border: "none", padding: "8px 15px", borderRadius: "4px", fontWeight: "500", cursor: "pointer" }}
-  >
-    Approve & Send to Manager
-  </button>
+    }
+  }}
+  style={{
+    backgroundColor: "#8a2b2b",
+    color: "#fff",
+    border: "none",
+    padding: "8px 15px",
+    borderRadius: "4px",
+    cursor: "pointer"
+  }}
+>
+  Approved
+</button>
+
+<button
+  className="btn-action-reject"
+  onClick={async () => {
+    const success = await updateClaimStatus("REJECT");
+
+    if (success) {
+      setPopupMessage("Claim has been rejected successfully.");
+      setShowPopup(true);
+    }
+  }}
+  style={{
+    backgroundColor: "#fff",
+    color: "#333",
+    border: "1px solid #ccc",
+    padding: "8px 15px",
+    borderRadius: "4px",
+    cursor: "pointer"
+  }}
+>
+  Reject
+</button>
+
+<button
+  className="btn-action-forward"
+  onClick={async () => {
+    const success = await updateClaimStatus("SEND_MANAGER");
+
+    if (success) {
+      setPopupMessage(
+        "Claim has been approved and sent to Manager for approval."
+      );
+      setShowPopup(true);
+    }
+  }}
+  style={{
+    backgroundColor: "#f1a80a",
+    color: "#000",
+    border: "none",
+    padding: "8px 15px",
+    borderRadius: "4px",
+    fontWeight: "500",
+    cursor: "pointer"
+  }}
+>
+  Approve & Send to Manager
+</button>
 
   <button
     className="btn-action-close"
-    onClick={() => setSelectedClaim(null)}
+    onClick={() => {
+      setSelectedClaim(null);
+      setFraudResult(null);
+    }}
     style={{ backgroundColor: "#fff", color: "#333", border: "1px solid #ccc", padding: "8px 15px", borderRadius: "4px", cursor: "pointer" }}
   >
     Close
@@ -388,41 +531,62 @@ const StaffOfficer = () => {
 </div> {showPopup && (
   <div className="popup-overlay">
     <div className="popup-box">
-      <h3>Sent Successfully</h3>
-      <p>Claim has been sent to Manager for approval.</p>
+
+      <h3>Action Completed</h3>
+
+      <p>{popupMessage}</p>
 
       <button
         className="popup-btn"
-        onClick={() => setShowPopup(false)}
+        onClick={() => {
+          setShowPopup(false);
+          setPopupMessage("");
+          setSelectedClaim(null);
+          setFraudResult(null);
+        }}
       >
         OK
       </button>
+
     </div>
   </div>
 )}
 
 {fraudResult && (
-  <div 
+  <div
     style={{
-      marginTop:"20px",
-      padding:"15px",
-      background:"#f5f7ff",
-      borderRadius:"8px",
-      border:"1px solid #ddd"
+      marginTop: "20px",
+      padding: "15px",
+      background: "#f5f7ff",
+      borderRadius: "8px",
+      border: "1px solid #ddd"
     }}
   >
-    <h3>Fraud Detection Result</h3>
+    <h3>Hybrid Fraud Detection Result</h3>
 
     <p>
-      <strong>Fraud Score:</strong> {fraudResult.score}%
+      <strong>Fraud Status:</strong>{" "}
+      {fraudResult.fraud_status}
     </p>
 
     <p>
-      <strong>Status:</strong> {fraudResult.status}
+      <strong>Rule-Based Score:</strong>{" "}
+      {fraudResult.rule_score}%
     </p>
 
     <p>
-      <strong>Reason:</strong> {fraudResult.reason}
+      <strong>ML Score:</strong>{" "}
+      {fraudResult.ml_score}%
+    </p>
+
+    <p>
+      <strong>Hybrid Score:</strong>{" "}
+      {fraudResult.hybrid_score}%
+    </p>
+
+    <p>
+      <strong>Risk Level:</strong>{" "}
+      {fraudResult.risk_level}
     </p>
   </div>
 )}
@@ -432,13 +596,38 @@ const StaffOfficer = () => {
                 <div className="details-right-side" style={{ flex: "1", borderLeft: "1px solid #eee", paddingLeft: "20px" }}>
                   <h3 className="section-heading">Attachments</h3>
                   <div className="attachments-wrapper" style={{ marginTop: "15px" }}>
-                    {selectedClaim.attachments && selectedClaim.attachments.map((file, idx) => (
-                      <div key={idx} className="attachment-row-item" style={{ marginBottom: "10px" }}>
-                        <a href={`#download-${file.name}`} className="attachment-link-btn" style={{ display: "block", padding: "6px 12px", border: "1px solid #ddd", borderRadius: "4px", background: "#f9f9f9", textDecoration: "none", color: "#0056b3", fontSize: "14px" }}>
-                          {file.type === "pdf" ? "📄 " : "🖼️ "} {file.name}
-                        </a>
-                      </div>
-                    ))}
+                  {selectedClaim.attachments &&
+  selectedClaim.attachments.map((file, idx) => {
+
+    return (
+      <div
+        key={idx}
+        className="attachment-row-item"
+        style={{ marginBottom: "10px" }}
+      >
+        <a
+          href={`http://127.0.0.1:5000/attachments/file/${file.attachment_id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="attachment-link-btn"
+          style={{
+            display: "block",
+            padding: "6px 12px",
+            border: "1px solid #ddd",
+            borderRadius: "4px",
+            background: "#f9f9f9",
+            textDecoration: "none",
+            color: "#0056b3",
+            fontSize: "14px"
+          }}
+        >
+          {file.file_type?.includes("pdf") ? "📄 " : "🖼️ "}
+          {file.file_name}
+        </a>
+      </div>
+    );
+  })}
+                 
                   </div>
                 </div>
 

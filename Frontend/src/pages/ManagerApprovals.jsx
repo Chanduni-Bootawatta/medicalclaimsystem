@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/Home.css";
 import "../styles/StaffOfficer.css";
@@ -9,54 +8,67 @@ import logo from "../assets/logo.png";
 const ManagerApprovals = () => {
   const navigate = useNavigate();
 
-  // 1. Expanded Mock data with the extra details shown in your design screenshot
-  const [claims, setClaims] = useState([
-    { 
-      id: "CLM-001", 
-      serviceNo: "SVC123456", 
-      name: "K. M. Perera", 
-      category: "A-1", 
-      date: "2025-10-01", 
-      status: "Pending",
-      account: "ACC0012345",
-      gradeBranch: "B-Grade / Colombo",
-      forWho: "Self",
-      relation: "Employee",
-      period: "2025-09-10 to 2025-09-20",
-      doctor: "Dr. S. Samaraweera",
-      attachments: [{ type: "pdf", name: "Open PDF" }]
-    },
-    { 
-      id: "CLM-002", 
-      serviceNo: "SVC999888", 
-      name: "A. R. Jayawardena", 
-      category: "C", 
-      date: "2025-09-28", 
-      status: "Approved",
-      account: "ACC0099887",
-      gradeBranch: "A-Grade / Kandy",
-      forWho: "Spouse",
-      relation: "Wife",
-      period: "2025-09-01 to 2025-09-30",
-      doctor: "Dr. H.T. Kumar",
-      attachments: [{ type: "pdf", name: "Open PDF" }, { type: "image", name: "asset.jpg" }]
-    },
-    { 
-      id: "CLM-003", 
-      serviceNo: "SVC654321", 
-      name: "N. A. Silva", 
-      category: "B-3", 
-      date: "2025-10-02", 
-      status: "Sent",
-      account: "ACC0076543",
-      gradeBranch: "C-Grade / Galle",
-      forWho: "Child",
-      relation: "Son",
-      period: "2025-09-15 to 2025-09-22",
-      doctor: "Dr. R. Perera",
-      attachments: [{ type: "image", name: "receipt.jpg" }]
-    }
-  ]);
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+ 
+  useEffect(() => {
+    const fetchManagerApprovals = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:5000/claims"
+        );
+  
+        const data = await response.json();
+  
+        if (!response.ok) {
+          throw new Error("Failed to load manager approvals");
+        }
+  
+        const managerClaims = data
+        .filter(
+          (claim) =>
+            claim.status === "MANAGER_REVIEW" ||
+            claim.status === "STAFF_CLAIM_AMOUNT" ||
+            claim.status === "REJECTED"
+        )
+          .map((claim) => ({
+            id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+            claimId: claim.claim_id,
+            serviceNo: claim.service_no,
+            name: claim.full_name || "Unknown",
+            category: claim.category,
+            date: claim.submitted_date || "",
+            status:
+            claim.status === "MANAGER_REVIEW"
+              ? "Pending"
+              : claim.status === "STAFF_CLAIM_AMOUNT"
+              ? "Approved"
+              : "Rejected",
+            account: claim.account_no,
+            gradeBranch: `${claim.grade} / ${claim.branch}`,
+            forWho: claim.claim_for,
+            relation: claim.relationship,
+            period: claim.treatment_period,
+            doctor: claim.doctor_name,
+            claimAmount: claim.claim_amount,
+            attachments: []
+          }));
+  
+        setClaims(managerClaims);
+  
+      } catch (error) {
+        console.error(
+          "Error loading manager approvals:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchManagerApprovals();
+  }, []);
+
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -160,12 +172,6 @@ const ManagerApprovals = () => {
   Manager Approvals
 </li>
 
-<li
-  className={location.pathname === "/reversed-claims" ? "active-link" : ""}
-  onClick={() => navigate("/reversed-claims")}
->
-  Reversed Claims
-</li>
 
 <li
   className={location.pathname === "/ab-approvals" ? "active-link" : ""}
@@ -193,10 +199,13 @@ const ManagerApprovals = () => {
             <div className="filter-group">
               <label>Category</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="A-1">A-1</option>
-                <option value="B-3">B-3</option>
-                <option value="C">C</option>
+              <option value="All">All</option>
+              <option value="OPD">OPD</option>
+              <option value="Dental">Dental</option>
+              <option value="Eye Care">Eye Care</option>
+              <option value="Surgery">Surgery</option>
+              <option value="Hospitalization">Hospitalization</option>
+              <option value="Laboratory">Laboratory</option>
               </select>
             </div>
 
@@ -216,7 +225,7 @@ const ManagerApprovals = () => {
 </button>
           </div>
         </aside>
-
+       
         {/* Right Side: Inbox Contents Block */}
         <main className="inbox-content-card">
           <div className="inbox-header-row">
@@ -297,7 +306,12 @@ const ManagerApprovals = () => {
                     <div><strong>Name:</strong> {selectedClaim.name}</div>
                     <div><strong>Grade / Branch:</strong> {selectedClaim.gradeBranch}</div>
                   </div>
-                  
+                  <div style={{ marginTop: "10px", fontSize: "17px" }}>
+                  <strong>Applicant Claim Amount:</strong>{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                  Rs. {Number(selectedClaim.claimAmount || 0).toLocaleString()}
+                  </span>
+                   </div>
                   <hr style={{ border: "0.5px solid #eee", margin: "15px 0" }} />
                   
                   <div className="details-data-grid" style={{ lineHeight: "1.8" }}>
@@ -309,37 +323,107 @@ const ManagerApprovals = () => {
 
                   {/* Notes Textarea */}
                   <div style={{ marginTop: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                 
-  <label style={{ fontWeight: "bold", minWidth: "120px" }}>
-  Claim Amount:
-</label>
+                  
+                  
+  {selectedClaim.status === "Approved" && (
+  <div style={{ marginTop: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+    
+    <label style={{ fontWeight: "bold", minWidth: "120px" }}>
+       Finalized Claim Amount:
+    </label>
 
-<input
-  type="number"
-  placeholder="Type amount"
-  value={claimAmount}
-  onChange={(e) => setClaimAmount(e.target.value)}
-  style={{
-    flex: 1,
-    padding: "8px",
-    borderRadius: "5px",
-    border: "1px solid #ccc"
-  }}
-/>
+    <input
+      type="number"
+      placeholder="Type amount"
+      value={claimAmount}
+      onChange={(e) => setClaimAmount(e.target.value)}
+      style={{
+        flex: 1,
+        padding: "8px",
+        borderRadius: "5px",
+        border: "1px solid #ccc"
+      }}
+    />
+
+  </div>
+)}          
+
    </div>     
    
   <div style={{ display: "flex", gap: "20px", marginTop: "25px" }}>      
+  {selectedClaim.status === "Approved" && (
   <button
     className="btn-action-forward"
-    onClick={() => {
-      updateClaimStatus("Sent");
-      setShowPopup(true);
+    onClick={async () => {
+      if (!claimAmount || Number(claimAmount) <= 0) {
+        alert("Please enter a valid claim amount.");
+        return;
+      }
+    
+      try {
+        // Step 1: Save the confirmed claim amount
+        const amountResponse = await fetch(
+          `http://127.0.0.1:5000/claims/${selectedClaim.claimId}/claimed-amount`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              claimed_amount: Number(claimAmount),
+            }),
+          }
+        );
+    
+        const amountData = await amountResponse.json();
+    
+        if (!amountResponse.ok || !amountData.success) {
+          throw new Error(
+            amountData.message || "Failed to update claim amount"
+          );
+        }
+    
+        // Step 2: Send claim to B Grade
+        const sendResponse = await fetch(
+          `http://127.0.0.1:5000/claims/${selectedClaim.claimId}/send-to-b`,
+          {
+            method: "PUT",
+          }
+        );
+    
+        const sendData = await sendResponse.json();
+    
+        if (!sendResponse.ok || !sendData.success) {
+          throw new Error(
+            sendData.message || "Failed to send claim to B Grade"
+          );
+        }
+    
+        console.log("CLAIM AMOUNT RESULT:", amountData);
+        console.log("SEND TO B RESULT:", sendData);
+    
+        // Remove the processed claim from this page
+        setClaims((prevClaims) =>
+          prevClaims.filter(
+            (claim) => claim.claimId !== selectedClaim.claimId
+          )
+        );
+    
+        setSelectedClaim(null);
+        setClaimAmount("");
+    
+        setShowPopup(true);
+    
+      } catch (error) {
+        console.error("Manager approval action error:", error);
+        alert(error.message || "Unable to process claim.");
+      }
     }}
     style={{ backgroundColor: "#f1a80a", color: "#000", border: "none", padding: "8px 15px", borderRadius: "4px", fontWeight: "500", cursor: "pointer" }}
   >
 Confirm Claim
   </button>
-
+)}
   <button
     className="btn-action-close"
     onClick={() => setSelectedClaim(null)}
@@ -347,23 +431,8 @@ Confirm Claim
   >
     Close
   </button>
-</div> {showPopup && (
-  <div className="popup-overlay">
-    <div className="popup-box">
-      <h3>Sent Successfully</h3>
-      <p>Requesting for BGrade approval.</p>
-
-      <button
-        className="popup-btn"
-        onClick={() => setShowPopup(false)}
-      >
-        OK
-      </button>
-    </div>
-  </div>
-)}
-                </div>
-
+</div>
+</div>
                 {/* Right Attachments Side */}
                 <div className="details-right-side" style={{ flex: "1", borderLeft: "1px solid #eee", paddingLeft: "20px" }}>
                   <h3 className="section-heading">Attachments</h3>
@@ -382,9 +451,27 @@ Confirm Claim
             </div>
              
           )}
-        </main>
 
+          {showPopup && (
+  <div className="popup-overlay">
+    <div className="popup-box">
+      <h3>Sent Successfully</h3>
+      <p>
+        Claim amount confirmed and sent to B Grade for approval.
+      </p>
+
+      <button
+        className="popup-btn"
+        onClick={() => setShowPopup(false)}
+      >
+        OK
+      </button>
+    </div>
       </div>
+       )}
+        </main>
+    </div>
+  
 
       <Footer />
     </div>

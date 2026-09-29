@@ -5,14 +5,14 @@ import BOfficer from "./pages/BOfficer";
 import AOfficer from "./pages/AOfficer";
 import ManagerApprovals from "./pages/ManagerApprovals";
 import ABApprovals from "./pages/ABApprovals";
-import Reversed from "./pages/Reversed";
 import Paid from "./pages/Paid";
 import PaymentHistory from "./pages/PaymentHistory";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ApplicationForm from "./pages/ApplicationForm";
 import ApplierDashboard from "./pages/ApplierDashboard";
-import StaffOfficer from "./pages/StaffOfficer"; // Imported your staff page
+import StaffOfficer from "./pages/StaffOfficer"; 
+import Notification from "./pages/Notification";
 import Support from "./pages/Support";
 
 function App() {
@@ -31,11 +31,12 @@ function App() {
       <Route path="/a-officer" element={<AOfficer />} />
       <Route path="/manager-approvals" element={<ManagerApprovals />} />
       <Route path="/ab-approvals" element={<ABApprovals />} />
-      <Route path="/reversed-claims" element={<Reversed />} />
       <Route path="/paid-claims" element={<Paid />} />
       <Route path="/payment-history" element={<PaymentHistory />} />
-      <Route path="/support"element={<Support />}
+      <Route path="/support"element={<Support />}/>
+      <Route path="/notifications"element={<Notification />}
 />
+
    
 
       {/* Login portals passing roles */}

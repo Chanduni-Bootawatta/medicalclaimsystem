@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Home.css";
 import "../styles/StaffOfficer.css";
@@ -9,58 +9,53 @@ import logo from "../assets/logo.png";
 const BOfficer = () => {
   const navigate = useNavigate();
 
-  // 1. Expanded Mock data with the extra details shown in your design screenshot
-  const [claims, setClaims] = useState([
-    { 
-      id: "CLM-001", 
-      serviceNo: "SVC123456", 
-      name: "K. M. Perera", 
-      category: "A-1", 
-      date: "2025-10-01", 
-      status: "Pending",
-      account: "ACC0012345",
-      gradeBranch: "B-Grade / Colombo",
-      forWho: "Self",
-      relation: "Employee",
-      period: "2025-09-10 to 2025-09-20",
-      doctor: "Dr. S. Samaraweera",
-      paidAmount: "LKR 25,000",
-      attachments: [{ type: "pdf", name: "Open PDF" }]
-    },
-    { 
-      id: "CLM-002", 
-      serviceNo: "SVC999888", 
-      name: "A. R. Jayawardena", 
-      category: "C", 
-      date: "2025-09-28", 
-      status: "Approved",
-      account: "ACC0099887",
-      gradeBranch: "A-Grade / Kandy",
-      forWho: "Spouse",
-      relation: "Wife",
-      period: "2025-09-01 to 2025-09-30",
-      doctor: "Dr. H.T. Kumar",
-      paidAmount: "LKR 40,000",
-      attachments: [{ type: "pdf", name: "Open PDF" }, { type: "image", name: "asset.jpg" }]
-    },
-    { 
-      id: "CLM-003", 
-      serviceNo: "SVC654321", 
-      name: "N. A. Silva", 
-      category: "B-3", 
-      date: "2025-10-02", 
-      status: "Sent",
-      account: "ACC0076543",
-      gradeBranch: "C-Grade / Galle",
-      forWho: "Child",
-      relation: "Son",
-      period: "2025-09-15 to 2025-09-22",
-      doctor: "Dr. R. Perera",
-      paidAmount: "LKR 15,000",
-      attachments: [{ type: "image", name: "receipt.jpg" }]
-    }
-  ]);
-
+  const [claims, setClaims] = useState([]);
+  useEffect(() => {
+    const fetchClaims = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:5000/claims");
+  
+        if (!response.ok) {
+          throw new Error("Failed to fetch claims");
+        }
+  
+        const data = await response.json();
+  
+        const bClaims = data
+          .filter(
+            (claim) =>
+              claim.status === "A_B_REVIEW" &&
+              claim.b_status === "PENDING"
+          )
+          .map((claim) => ({
+            id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+            claimId: claim.claim_id,
+            serviceNo: claim.service_no,
+            name: claim.full_name || "Unknown",
+            category: claim.category,
+            date: claim.submitted_date || "",
+            status: "Pending",
+            account: claim.account_no,
+            gradeBranch: `${claim.grade} / ${claim.branch}`,
+            forWho: claim.claim_for,
+            relation: claim.relationship,
+            period: claim.treatment_period,
+            doctor: claim.doctor_name,
+            claimAmount: claim.claim_amount,
+            claimedAmount: claim.claimed_amount,
+            attachments: []
+          }));
+  
+        setClaims(bClaims);
+  
+      } catch (error) {
+        console.error("B Grade claims error:", error);
+      }
+    };
+  
+    fetchClaims();
+  }, []);
+  
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");       // typing
@@ -70,21 +65,48 @@ const BOfficer = () => {
   // 2. State to track the active/clicked claim details
   const [selectedClaim, setSelectedClaim] = useState(null);
 
-  const updateClaimStatus = (newStatus) => {
+  const updateClaimStatus = async (action) => {
     if (!selectedClaim) return;
   
-    setClaims((prevClaims) =>
-      prevClaims.map((claim) =>
-        claim.id === selectedClaim.id
-          ? { ...claim, status: newStatus }
-          : claim
-      )
-    );
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/claims/${selectedClaim.claimId}/b-grade-action`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: action,
+          }),
+        }
+      );
   
-    setSelectedClaim((prev) => ({
-      ...prev,
-      status: newStatus,
-    }));
+      const data = await response.json();
+  
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to update claim");
+      }
+  
+      if (action === "APPROVE") {
+        setShowPopup(true);
+      } else {
+        alert("Claim rejected successfully.");
+      }
+  
+      // Remove processed claim from B Grade inbox
+      setClaims((prevClaims) =>
+        prevClaims.filter(
+          (claim) => claim.claimId !== selectedClaim.claimId
+        )
+      );
+  
+      setSelectedClaim(null);
+  
+    } catch (error) {
+      console.error("B Grade action error:", error);
+      alert(error.message || "Failed to process claim.");
+    }
   };
 
   const getStatusStyle = (status) => {
@@ -167,10 +189,13 @@ const BOfficer = () => {
             <div className="filter-group">
               <label>Category</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="A-1">A-1</option>
-                <option value="B-3">B-3</option>
-                <option value="C">C</option>
+              <option value="All">All</option>
+              <option value="OPD">OPD</option>
+              <option value="Dental">Dental</option>
+              <option value="Eye Care">Eye Care</option>
+              <option value="Surgery">Surgery</option>
+              <option value="Hospitalization">Hospitalization</option>
+              <option value="Laboratory">Laboratory</option>
               </select>
             </div>
 
@@ -280,7 +305,14 @@ const BOfficer = () => {
                     <div><strong>Period:</strong> {selectedClaim.period}</div>
                     <div><strong>Doctor:</strong> {selectedClaim.doctor}</div>
                     <div><strong>Category:</strong> {selectedClaim.category}</div>
-                    <div><strong>Paid Amount:</strong> Rs. {selectedClaim.paidAmount}</div>
+                    <div>
+                    <strong>Applicant Claim Amount:</strong>{" "}
+                    Rs. {Number(selectedClaim.claimAmount || 0).toLocaleString()}
+                    </div>
+                    <div>
+                   <strong>Finalized Claimed Amount:</strong>{" "}
+                   Rs. {selectedClaim.claimedAmount ?? "Not finalized"}
+                   </div>
                   </div>
 
                   {/* Notes Textarea */}
@@ -296,19 +328,16 @@ const BOfficer = () => {
                   <div className="details-actions" style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
   
 
-                  <button
+ <button
   className="btn-action-approve"
-  onClick={() => {
-    updateClaimStatus("Sent");
-    setShowPopup(true);
-  }}
+  onClick={() => updateClaimStatus("APPROVE")}
 >
   Approve
 </button>
 
 <button
   className="btn-action-reject"
-  onClick={() => updateClaimStatus("Rejected")}
+  onClick={() => updateClaimStatus("REJECT")}
 >
   Reject
 </button>
@@ -320,22 +349,7 @@ const BOfficer = () => {
   >
     Close
   </button>
-</div> {showPopup && (
-  <div className="popup-overlay">
-    <div className="popup-box">
-    <h3>Sent Successfully</h3>
-    <p>Claim forwarded to A Grade Officer.</p>
-
-      <button
-        className="popup-btn"
-        onClick={() => setShowPopup(false)}
-      >
-        OK
-      </button>
-    </div>
-  </div>
-)}
-                </div>
+</div>       </div>
 
                 {/* Right Attachments Side */}
                 <div className="details-right-side" style={{ flex: "1", borderLeft: "1px solid #eee", paddingLeft: "20px" }}>
@@ -355,6 +369,22 @@ const BOfficer = () => {
             </div>
              
           )}
+           {showPopup && (
+  <div className="popup-overlay">
+    <div className="popup-box">
+    <h3>Sent Successfully</h3>
+    <p>Claim forwarded to A Grade Officer.</p>
+
+      <button
+        className="popup-btn"
+        onClick={() => setShowPopup(false)}
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
+         
         </main>
 
       </div>

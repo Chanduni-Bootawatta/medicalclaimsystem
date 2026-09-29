@@ -12,17 +12,27 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
+    
+    print("LOGIN ATTEMPT:", repr(username))
+
     db = get_connection()
     cursor = db.cursor(dictionary=True)
 
     cursor.execute(
-        """
-        SELECT user_id, username, full_name, role, branch, service_no, applicant_type
-        FROM users
-        WHERE username=%s AND password=%s
-        """,
-        (username, password)
-    )
+    """
+    SELECT
+        user_id,
+        username,
+        full_name,
+        LOWER(role) AS role,
+        branch,
+        service_no,
+        applicant_type
+    FROM users
+    WHERE username=%s AND password=%s
+    """,
+    (username, password)
+)
 
     user = cursor.fetchone()
 

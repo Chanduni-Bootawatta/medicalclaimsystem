@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Home.css";
 import "../styles/ApplierDashboard.css";
@@ -10,76 +10,83 @@ const ApplierDashboard = () => {
 
   const navigate = useNavigate();
 
+  const loggedInUser = JSON.parse(
+    localStorage.getItem("user")
+  );
+
   const [activeSection, setActiveSection] = useState("dashboard");
-  const [selectedNotification, setSelectedNotification] = useState(null);
+ 
+
+  const [claims, setClaims] = useState([]);
+  const [payments, setPayments] = useState([]);
+
+  useEffect(() => {
+    const fetchMyClaims = async () => {
+      try {
+  
+        // Get all claims
+        const response = await fetch(
+          "http://127.0.0.1:5000/claims"
+        );
+  
+        const data = await response.json();
+  
+        const myClaims = data.filter(
+          claim =>
+            claim.user_id === loggedInUser?.user_id
+        );
+  
+        setClaims(myClaims);
+  
+  
+        // Get payment history
+        const paymentResponse = await fetch(
+          "http://127.0.0.1:5000/claims/payment-history"
+        );
+  
+        const paymentData = await paymentResponse.json();
+  
+        const myPayments = paymentData.claims.filter(
+          payment =>
+            payment.user_id === loggedInUser?.user_id
+        );
+  
+        setPayments(myPayments);
+  
+      } catch (error) {
+  
+        console.error(
+          "Failed to fetch claims and payments:",
+          error
+        );
+  
+      }
+    };
+  
+    fetchMyClaims();
+  
+  }, [loggedInUser?.user_id]);
+
+  
 
 
-  const notifications = [
-    {
-      id:1,
-      sender:"Staff Officer",
-      subject:"Claim Approved",
-      message:"Your medical claim CLM-001 has been approved by the Staff Officer.",
-      date:"2026-07-15"
-    },
-    {
-      id:2,
-      sender:"Manager",
-      subject:"Claim Forwarded",
-      message:"Your medical claim CLM-002 has been forwarded for final approval.",
-      date:"2026-07-14"
-    },
-    {
-      id:3,
-      sender:"System",
-      subject:"Payment Completed",
-      message:"Payment for claim CLM-003 has been successfully processed.",
-      date:"2026-07-10"
-    }
-  ];
+  const totalClaims = claims.length;
 
+const pendingClaims = claims.filter(
+  claim => claim.status === "PENDING"
+).length;
 
+const approvedClaims = claims.filter(
+  claim =>
+    claim.status === "APPROVED" ||
+    claim.b_status === "APPROVED" ||
+    claim.a_status === "APPROVED"
+).length;
 
-  const claims=[
-    {
-      id:"CLM-001",
-      category:"A1",
-      submitted:"2026-07-01",
-      amount:"Rs.25,000",
-      status:"Approved"
-    },
-    {
-      id:"CLM-002",
-      category:"B3",
-      submitted:"2026-07-05",
-      amount:"Rs.18,000",
-      status:"Pending"
-    },
-    {
-      id:"CLM-003",
-      category:"C1",
-      submitted:"2026-06-20",
-      amount:"Rs.10,000",
-      status:"Paid"
-    }
-  ];
+const paidClaims = claims.filter(
+  claim => claim.payment_status === "PAID"
+).length;
 
-
-
-  const payments=[
-    {
-      id:"CLM-003",
-      amount:"Rs.10,000",
-      date:"2026-07-10",
-      status:"Completed"
-    },
-    {
-      id:"CLM-004",
-      amount:"Rs.30,000",
-      date:"2026-06-15",
-      status:"Completed"
-    }
-  ];
 
 
 
@@ -174,16 +181,9 @@ My Claims
 
 
 <li
-className={activeSection==="notifications"?"active-link":""}
-onClick={()=>setActiveSection("notifications")}
+  onClick={() => navigate("/notifications")}
 >
-    Notification Inbox
-
-    <span className="notification-wrapper">
-        <span className="bell-icon"></span>
-        <span className="notification-count">3</span>
-    </span>
-
+  Notification Inbox
 </li>
 
 
@@ -255,12 +255,11 @@ activeSection==="dashboard" &&
 <div>
 
 <h2>
-Welcome PB001
+  Welcome {loggedInUser?.full_name}
 </h2>
 
-
 <p>
-Manage your medical claim applications, notifications and payments.
+  Manage your medical claim applications, notifications and payments.
 </p>
 
 
@@ -272,72 +271,33 @@ Manage your medical claim applications, notifications and payments.
 
 </div>
 
-
-
-
-
-<div className="balance-card">
-
-
-<h3>
-Available Balance
-</h3>
-
-
-<h2>
-Rs.125,000.00
-</h2>
-
-
-<p>
-Medical reimbursement account
-</p>
-
-
 </div>
-
-
-
-
-</div>
-
-
-
-
 
 
 
 <div className="summary-container">
 
+  <div className="summary-card">
+    <h3>Total Claims</h3>
+    <p>{totalClaims}</p>
+  </div>
 
-<div className="summary-card">
-<h3>Total Claims</h3>
-<p>5</p>
-</div>
+  <div className="summary-card">
+    <h3>Pending</h3>
+    <p>{pendingClaims}</p>
+  </div>
 
+  <div className="summary-card">
+    <h3>Approved</h3>
+    <p>{approvedClaims}</p>
+  </div>
 
-<div className="summary-card">
-<h3>Pending</h3>
-<p>2</p>
-</div>
-
-
-<div className="summary-card">
-<h3>Approved</h3>
-<p>3</p>
-</div>
-
-
-<div className="summary-card">
-<h3>Paid</h3>
-<p>2</p>
-</div>
-
+  <div className="summary-card">
+    <h3>Paid</h3>
+    <p>{paidClaims}</p>
+  </div>
 
 </div>
-
-
-
 
 
 <div className="quick-action">
@@ -369,127 +329,6 @@ Create Application
 </>
 
 }
-
-
-
-
-
-
-{
-activeSection==="notifications" &&
-
-
-<div className="panel">
-
-
-<h2>
-Notification Inbox
-</h2>
-
-
-<div className="mail-layout">
-
-
-<div className="mail-list">
-
-
-{
-notifications.map(item=>(
-
-<div
-key={item.id}
-className="mail-item"
-onClick={()=>setSelectedNotification(item)}
->
-
-
-<h4>
-{item.sender}
-</h4>
-
-
-<p>
-{item.subject}
-</p>
-
-
-<span>
-{item.date}
-</span>
-
-
-</div>
-
-
-))
-
-}
-
-
-</div>
-
-
-
-
-
-<div className="mail-preview">
-
-
-{
-selectedNotification ?
-
-<>
-
-<h3>
-{selectedNotification.subject}
-</h3>
-
-
-<p>
-From: {selectedNotification.sender}
-</p>
-
-
-<hr/>
-
-
-<p>
-{selectedNotification.message}
-</p>
-
-
-<p>
-{selectedNotification.date}
-</p>
-
-
-</>
-
-
-:
-
-<p>
-Select a notification to view details
-</p>
-
-
-}
-
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-}
-
-
-
-
 
 
 {
@@ -528,13 +367,27 @@ My Claims
 {
 claims.map(claim=>(
 
-<tr key={claim.id}>
+<tr key={claim.claim_id}>
 
-<td>{claim.id}</td>
-<td>{claim.category}</td>
-<td>{claim.submitted}</td>
-<td>{claim.amount}</td>
-<td>{claim.status}</td>
+<td>
+  CLM-{String(claim.claim_id).padStart(3, "0")}
+</td>
+
+<td>
+  {claim.category}
+</td>
+
+<td>
+  {claim.treatment_start_date}
+</td>
+
+<td>
+  Rs.{Number(claim.claim_amount).toLocaleString()}
+</td>
+
+<td>
+  {claim.status}
+</td>
 
 </tr>
 
@@ -581,7 +434,7 @@ Recent Payments
 <tr>
 <th>Claim ID</th>
 <th>Amount</th>
-<th>Date</th>
+<th>Treatment Period</th>
 <th>Status</th>
 </tr>
 
@@ -591,25 +444,33 @@ Recent Payments
 
 <tbody>
 
-
 {
-payments.map(payment=>(
+  payments.map(payment => (
 
-<tr key={payment.id}>
+    <tr key={payment.claim_id}>
 
+      <td>
+        CLM-{String(payment.claim_id).padStart(3, "0")}
+      </td>
 
-<td>{payment.id}</td>
-<td>{payment.amount}</td>
-<td>{payment.date}</td>
-<td>{payment.status}</td>
+      <td>
+        Rs.{Number(payment.claim_amount).toLocaleString()}
+      </td>
 
+      <td>
+        {payment.treatment_period || "-"}
+      </td>
 
-</tr>
+      <td>
+        {payment.payment_status}
+      </td>
 
+    </tr>
 
-))
-
+  ))
 }
+
+
 
 
 </tbody>

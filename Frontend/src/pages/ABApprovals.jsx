@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/Home.css";
 import "../styles/StaffOfficer.css";
@@ -9,58 +8,124 @@ import logo from "../assets/logo.png";
 const ABApprovals = () => {
   const navigate = useNavigate();
 
-  // 1. Expanded Mock data with the extra details shown in your design screenshot
-  const [claims, setClaims] = useState([
-    { 
-      id: "CLM-001", 
-      serviceNo: "SVC123456", 
-      name: "K. M. Perera", 
-      category: "A-1", 
-      date: "2025-10-01", 
-      status: "Pending",
-      account: "ACC0012345",
-      gradeBranch: "B-Grade / Colombo",
-      forWho: "Self",
-      relation: "Employee",
-      period: "2025-09-10 to 2025-09-20",
-      doctor: "Dr. S. Samaraweera",
-      paidAmount: "LKR 25,000",
-      attachments: [{ type: "pdf", name: "Open PDF" }]
-    },
-    { 
-      id: "CLM-002", 
-      serviceNo: "SVC999888", 
-      name: "A. R. Jayawardena", 
-      category: "C", 
-      date: "2025-09-28", 
-      status: "Approved",
-      account: "ACC0099887",
-      gradeBranch: "A-Grade / Kandy",
-      forWho: "Spouse",
-      relation: "Wife",
-      period: "2025-09-01 to 2025-09-30",
-      doctor: "Dr. H.T. Kumar",
-      paidAmount: "LKR 40,000",
-      attachments: [{ type: "pdf", name: "Open PDF" }, { type: "image", name: "asset.jpg" }]
-    },
-    { 
-      id: "CLM-003", 
-      serviceNo: "SVC654321", 
-      name: "N. A. Silva", 
-      category: "B-3", 
-      date: "2025-10-02", 
-      status: "Approved",
-      account: "ACC0076543",
-      gradeBranch: "C-Grade / Galle",
-      forWho: "Child",
-      relation: "Son",
-      period: "2025-09-15 to 2025-09-22",
-      doctor: "Dr. R. Perera",
-      paidAmount: "LKR 15,000",
-      attachments: [{ type: "image", name: "receipt.jpg" }]
-    }
-  ]);
+  const [claims, setClaims] = useState([]);
+const [loading, setLoading] = useState(true);
 
+useEffect(() => {
+  const fetchABApprovals = async () => {
+    try {
+      // Fetch pending claims
+      const pendingResponse = await fetch(
+        "http://127.0.0.1:5000/claims/ab-pending"
+      );
+
+      const pendingData = await pendingResponse.json();
+
+      if (!pendingResponse.ok) {
+        throw new Error(
+          pendingData.message || "Failed to load pending claims"
+        );
+      }
+
+      const pendingClaims = pendingData.claims.map((claim) => ({
+        id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+        claimId: claim.claim_id,
+        serviceNo: claim.service_no,
+        name: claim.full_name || "Unknown",
+        category: claim.category,
+        date: claim.submitted_date || "",
+        status: "Pending",
+        account: claim.account_no,
+        gradeBranch: `${claim.grade} / ${claim.branch}`,
+        forWho: claim.claim_for,
+        relation: claim.relationship,
+        period: claim.treatment_period,
+        doctor: claim.doctor_name,
+        claimAmount: claim.claim_amount,
+        claimedAmount: claim.claimed_amount,
+        attachments: []
+      }));
+
+      // Fetch approved claims
+      const approvedResponse = await fetch(
+        "http://127.0.0.1:5000/claims/ab-approved"
+      );
+
+      const approvedData = await approvedResponse.json();
+
+      if (!approvedResponse.ok) {
+        throw new Error(
+          approvedData.message || "Failed to load approved claims"
+        );
+      }
+
+      const approvedClaims = approvedData.claims.map((claim) => ({
+        id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+        claimId: claim.claim_id,
+        serviceNo: claim.service_no,
+        name: claim.full_name || "Unknown",
+        category: claim.category,
+        date: claim.treatment_start_date || "",
+        status: "Approved",
+        account: claim.account_no,
+        gradeBranch: `${claim.grade} / ${claim.branch}`,
+        forWho: claim.claim_for,
+        relation: claim.relationship,
+        period: claim.treatment_period,
+        doctor: claim.doctor_name,
+        claimAmount: claim.claim_amount,
+        claimedAmount: claim.claimed_amount,
+        attachments: []
+      }));
+
+      // Fetch rejected claims
+      const rejectedResponse = await fetch(
+        "http://127.0.0.1:5000/claims/ab-rejected"
+      );
+
+      const rejectedData = await rejectedResponse.json();
+
+      if (!rejectedResponse.ok) {
+        throw new Error(
+          rejectedData.message || "Failed to load rejected claims"
+        );
+      }
+
+      const rejectedClaims = rejectedData.claims.map((claim) => ({
+        id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+        claimId: claim.claim_id,
+        serviceNo: claim.service_no,
+        name: claim.full_name || "Unknown",
+        category: claim.category,
+        date: claim.treatment_start_date || "",
+        status: "Rejected",
+        account: claim.account_no,
+        gradeBranch: `${claim.grade} / ${claim.branch}`,
+        forWho: claim.claim_for,
+        relation: claim.relationship,
+        period: claim.treatment_period,
+        doctor: claim.doctor_name,
+        claimAmount: claim.claim_amount,
+        claimedAmount: claim.claimed_amount,
+        attachments: []
+      }));
+
+      // Combine all three
+      setClaims([
+        ...pendingClaims,
+        ...approvedClaims,
+        ...rejectedClaims
+      ]);
+
+    } catch (error) {
+      console.error("A & B approvals error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchABApprovals();
+}, []);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");       // typing
@@ -162,12 +227,6 @@ const ABApprovals = () => {
   Manager Approvals
 </li>
 
-<li
-  className={location.pathname === "/reversed-claims" ? "active-link" : ""}
-  onClick={() => navigate("/reversed-claims")}
->
-  Reversed Claims
-</li>
 
 <li
   className={location.pathname === "/ab-approvals" ? "active-link" : ""}
@@ -195,10 +254,13 @@ const ABApprovals = () => {
             <div className="filter-group">
               <label>Category</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="A-1">A-1</option>
-                <option value="B-3">B-3</option>
-                <option value="C">C</option>
+              <option value="All">All</option>
+              <option value="OPD">OPD</option>
+              <option value="Dental">Dental</option>
+              <option value="Eye Care">Eye Care</option>
+              <option value="Surgery">Surgery</option>
+              <option value="Hospitalization">Hospitalization</option>
+              <option value="Laboratory">Laboratory</option>
               </select>
             </div>
 
@@ -307,41 +369,85 @@ const ABApprovals = () => {
                     <div><strong>Period:</strong> {selectedClaim.period}</div>
                     <div><strong>Doctor:</strong> {selectedClaim.doctor}</div>
                     <div><strong>Category:</strong> {selectedClaim.category}</div>
-                    <div><strong>Paid Amount:</strong> {selectedClaim.paidAmount}</div>
+                    <div>
+                    <strong>Applicant Claim Amount:</strong>{" "}
+                    Rs. {Number(selectedClaim.claimAmount || 0).toLocaleString()}
+                    </div>
+                    <div>
+                    <strong>Finalized Claimed Amount:</strong>{" "}
+                     Rs. {Number(selectedClaim.claimedAmount || 0).toLocaleString()}
+                    </div>
                   </div>
 
             
 
       
    
-  <div style={{ display: "flex", gap: "20px", marginTop: "25px" }}>      
-  <button
-    className="btn-action-forward"
-    onClick={() => {
-      updateClaimStatus("Approved");
-      setShowPopup(true);
+                  {selectedClaim.status === "Approved" && (
+  <div
+    style={{
+      display: "flex",
+      gap: "20px",
+      marginTop: "25px",
     }}
-    style={{ backgroundColor: "#f1a80a", color: "#000", border: "none", padding: "8px 15px", borderRadius: "4px", fontWeight: "500", cursor: "pointer" }}
   >
-Pay the Claim
+    <button
+      className="btn-action-forward"
+      onClick={async () => {
+        if (!selectedClaim) return;
 
-  </button>
-</div> {showPopup && (
-  <div className="popup-overlay">
-    <div className="popup-box">
-      <h3>Claim Payment Confirmed!</h3>
-    
+        try {
+          const response = await fetch(
+            `http://127.0.0.1:5000/claims/${selectedClaim.claimId}/pay`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-      <button
-        className="popup-btn"
-        onClick={() => setShowPopup(false)}
-      >
-        OK
-      </button>
-    </div>
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(
+              data.message || "Failed to process payment"
+            );
+          }
+
+          console.log("PAYMENT RESULT:", data);
+
+          setClaims((prevClaims) =>
+            prevClaims.filter(
+              (claim) =>
+                claim.claimId !== selectedClaim.claimId
+            )
+          );
+
+          setSelectedClaim(null);
+          setShowPopup(true);
+
+        } catch (error) {
+          console.error("Payment error:", error);
+          alert(
+            error.message || "Unable to process payment."
+          );
+        }
+      }}
+      style={{
+        backgroundColor: "#f1a80a",
+        color: "#000",
+        border: "none",
+        padding: "8px 15px",
+        borderRadius: "4px",
+        fontWeight: "500",
+        cursor: "pointer",
+      }}
+    >
+      Pay the Claim
+    </button>
   </div>
-)}
-                </div>
+)}</div>
 
                 {/* Right Attachments Side */}
                 <div className="details-right-side" style={{ flex: "1", borderLeft: "1px solid #eee", paddingLeft: "20px" }}>
@@ -360,8 +466,23 @@ Pay the Claim
               </div>
             </div>
              
-          )}
-        </main>
+          )}              
+{showPopup && (
+  <div className="popup-overlay">
+    <div className="popup-box">
+      <h3>Claim Payment Confirmed!</h3>
+
+      <button
+        className="popup-btn"
+        onClick={() => setShowPopup(false)}
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
+
+</main>
 
       </div>
 

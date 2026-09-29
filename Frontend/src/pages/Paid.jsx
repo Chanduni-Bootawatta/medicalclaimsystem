@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/Home.css";
@@ -9,57 +9,54 @@ import logo from "../assets/logo.png";
 const Paid = () => {
   const navigate = useNavigate();
 
-  // 1. Expanded Mock data with the extra details shown in your design screenshot
-  const [claims, setClaims] = useState([
-    { 
-      id: "CLM-001", 
-      serviceNo: "SVC123456", 
-      name: "K. M. Perera", 
-      category: "A-1", 
-      date: "2025-10-01", 
-      status: "Paid",
-      account: "ACC0012345",
-      gradeBranch: "B-Grade / Colombo",
-      forWho: "Self",
-      relation: "Employee",
-      period: "2025-09-10 to 2025-09-20",
-      doctor: "Dr. S. Samaraweera",
-      paidAmount: "LKR 25,000",
-      attachments: [{ type: "pdf", name: "Open PDF" }]
-    },
-    { 
-      id: "CLM-002", 
-      serviceNo: "SVC999888", 
-      name: "A. R. Jayawardena", 
-      category: "C", 
-      date: "2025-09-28", 
-      status: "Paid",
-      account: "ACC0099887",
-      gradeBranch: "A-Grade / Kandy",
-      forWho: "Spouse",
-      relation: "Wife",
-      period: "2025-09-01 to 2025-09-30",
-      doctor: "Dr. H.T. Kumar",
-      paidAmount: "LKR 40,000",
-      attachments: [{ type: "pdf", name: "Open PDF" }, { type: "image", name: "asset.jpg" }]
-    },
-    { 
-      id: "CLM-003", 
-      serviceNo: "SVC654321", 
-      name: "N. A. Silva", 
-      category: "B-3", 
-      date: "2025-10-02", 
-      status: "Paid",
-      account: "ACC0076543",
-      gradeBranch: "C-Grade / Galle",
-      forWho: "Child",
-      relation: "Son",
-      period: "2025-09-15 to 2025-09-22",
-      doctor: "Dr. R. Perera",
-      paidAmount: "LKR 15,000",
-      attachments: [{ type: "image", name: "receipt.jpg" }]
-    }
-  ]);
+ 
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPaidClaims = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:5000/claims/payment-history"
+        );
+  
+        const data = await response.json();
+  
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load paid claims"
+          );
+        }
+  
+        const paidClaims = data.claims.map((claim) => ({
+          id: `CLM-${String(claim.claim_id).padStart(3, "0")}`,
+          claimId: claim.claim_id,
+          serviceNo: claim.service_no,
+          name: claim.full_name || "Unknown",
+          category: claim.category,
+          date: claim.treatment_start_date || "",
+          status: "Paid",
+          account: claim.account_no,
+          gradeBranch: `${claim.grade} / ${claim.branch}`,
+          forWho: claim.claim_for,
+          relation: claim.relationship,
+          period: claim.treatment_period,
+          doctor: claim.doctor_name,
+          paidAmount: claim.claimed_amount,
+          attachments: []
+        }));
+  
+        setClaims(paidClaims);
+  
+      } catch (error) {
+        console.error("Paid claims error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchPaidClaims();
+  }, []);
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -113,12 +110,15 @@ const Paid = () => {
   
     return matchesCategory && matchesStatus && matchesSearch;
   });
+ 
   const handleRefresh = () => {
     setCategoryFilter("All");
     setStatusFilter("All");
     setSearchQuery("");
     setAppliedSearch("");
     setSelectedClaim(null);
+  
+    window.location.reload();
   };
   
   return (
@@ -157,12 +157,7 @@ const Paid = () => {
   Manager Approvals
 </li>
 
-<li
-  className={location.pathname === "/reversed-claims" ? "active-link" : ""}
-  onClick={() => navigate("/reversed-claims")}
->
-  Reversed Claims
-</li>
+
 
 <li
   className={location.pathname === "/ab-approvals" ? "active-link" : ""}
@@ -190,10 +185,13 @@ const Paid = () => {
             <div className="filter-group">
               <label>Category</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="A-1">A-1</option>
-                <option value="B-3">B-3</option>
-                <option value="C">C</option>
+              <option value="All">All</option>
+              <option value="OPD">OPD</option>
+              <option value="Dental">Dental</option>
+              <option value="Eye Care">Eye Care</option>
+              <option value="Surgery">Surgery</option>
+              <option value="Hospitalization">Hospitalization</option>
+              <option value="Laboratory">Laboratory</option>
               </select>
             </div>
 
@@ -251,7 +249,7 @@ const Paid = () => {
     <th>Service No</th>
     <th>Name</th>
     <th>Category</th>
-    <th>Submitted</th>
+    
     <th style={{ textAlign: "center" }}>Status</th>
     <th style={{ textAlign: "center" }}>History</th>
   </tr>
@@ -269,7 +267,7 @@ const Paid = () => {
                     <td>{claim.serviceNo}</td>
                     <td>{claim.name}</td>
                     <td>{claim.category}</td>
-                    <td>{claim.date}</td>
+                   
                     <td style={{ textAlign: "center" }}>
                       <span className="status-badge" style={getStatusStyle(claim.status)}>
                         {claim.status}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/Home.css";
 import "../styles/StaffOfficer.css";
@@ -35,41 +35,56 @@ const PaymentHistory = () => {
     );
   }
 
-  // Dummy payment history per claim
-  const paymentHistoryData = {
-    "CLM-001": [
-      {
-        date: "2025-10-02",
-        amount: "LKR 2000",
-        method: "Bank Transfer",
-        status: "Completed",
-      },
-    ],
-    "CLM-002": [
-      {
-        date: "2025-09-25",
-        amount: "LKR 3000",
-        method: "Bank Transfer",
-        status: "Completed",
-      },
-      {
-        date: "2025-09-20",
-        amount: "LKR 2000",
-        method: "Bank Transfer",
-        status: "Completed",
-      },
-    ],
-    "CLM-003": [
-      {
-        date: "2025-10-02",
-        amount: "LKR 1500",
-        method: "Bank Transfer",
-        status: "Completed",
-      },
-    ],
+const [paymentData, setPaymentData] = useState([]);
+const [loading, setLoading] = useState(true);
+const [paidClaim, setPaidClaim] = useState(null);
+
+useEffect(() => {
+  const fetchPaymentHistory = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/claims/payment-history"
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Failed to load payment history"
+        );
+      }
+
+      const selectedPayment = data.claims.find(
+        (item) => item.claim_id === claim.claimId
+      );
+
+      if (selectedPayment) {
+        setPaidClaim(selectedPayment);
+      
+        setPaymentData([
+          {
+            date: selectedPayment.paid_at
+              ? new Date(selectedPayment.paid_at).toLocaleString()
+              : "—",
+            amount: selectedPayment.claimed_amount,
+            method: "Payment processed",
+            status: selectedPayment.payment_status,
+          },
+        ]);
+      } else {
+        setPaidClaim(null);
+        setPaymentData([]);
+      }
+      
+    } catch (error) {
+      console.error("Payment history error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const paymentData = paymentHistoryData[claim.id] || [];
+  fetchPaymentHistory();
+}, [claim.claimId]);
 
   return (
     <div className="home-container">
@@ -128,79 +143,119 @@ const PaymentHistory = () => {
 
           {/* SUMMARY CARDS */}
           <div
-            style={{
-              display: "flex",
-              gap: "15px",
-              marginTop: "20px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div
-              style={{
-                flex: 1,
-                padding: "15px",
-                background: "#fff",
-                border: "1px solid #eee",
-                borderRadius: "8px",
-              }}
-            >
-              <h4>Total Limit</h4>
-              <p><b>LKR 10,000</b></p>
-            </div>
+  style={{
+    display: "flex",
+    gap: "15px",
+    marginTop: "20px",
+    flexWrap: "wrap",
+  }}
+>
+  <div
+    style={{
+      flex: 1,
+      padding: "15px",
+      background: "#fff",
+      border: "1px solid #eee",
+      borderRadius: "8px",
+    }}
+  >
+    <h4>Applicant Claim Amount</h4>
+    <p>
+      <b>
+        LKR {Number(paidClaim?.claim_amount || 0).toLocaleString()}
+      </b>
+    </p>
+  </div>
 
-            <div
-              style={{
-                flex: 1,
-                padding: "15px",
-                background: "#fff",
-                border: "1px solid #eee",
-                borderRadius: "8px",
-              }}
-            >
-              <h4>Deducted</h4>
-              <p><b>LKR 7,000</b></p>
-            </div>
+  <div
+    style={{
+      flex: 1,
+      padding: "15px",
+      background: "#fff",
+      border: "1px solid #eee",
+      borderRadius: "8px",
+    }}
+  >
+    <h4>Finalized Claimed Amount</h4>
+    <p>
+      <b>
+        LKR {Number(paidClaim?.claimed_amount|| 0).toLocaleString()}
+      </b>
+    </p>
+  </div>
 
-            <div
-              style={{
-                flex: 1,
-                padding: "15px",
-                background: "#fff",
-                border: "1px solid #eee",
-                borderRadius: "8px",
-              }}
-            >
-              <h4>Remaining</h4>
-              <p><b>LKR 3,000</b></p>
-            </div>
-          </div>
+  <div
+    style={{
+      flex: 1,
+      padding: "15px",
+      background: "#fff",
+      border: "1px solid #eee",
+      borderRadius: "8px",
+    }}
+  >
+    <h4>Payment Status</h4>
+    <p>
+      <b>{claim.status}</b>
+    </p>
+  </div>
+</div>
+  {/* DOWNLOAD PAYMENT REPORT */}
+<div style={{ marginTop: "20px" }}>
+  <button
+    style={{
+      background: "#f1a80a",
+      border: "none",
+      padding: "10px 15px",
+      borderRadius: "5px",
+      cursor: "pointer",
+      fontWeight: "bold",
+    }}
+    onClick={() => {
+      const doc = new jsPDF();
 
-          {/* DOWNLOAD */}
-          <div style={{ marginTop: "20px" }}>
-            <button 
+      doc.text("Payment Report", 10, 10);
+      doc.text(`Claim ID: ${claim.id}`, 10, 20);
+      doc.text(`Service No: ${claim.serviceNo}`, 10, 30);
+      doc.text(`Name: ${claim.name}`, 10, 40);
+      doc.text(`Category: ${claim.category}`, 10, 50);
 
-          style={{
-                background: "#f1a80a",
-                border: "none",
-                padding: "10px 15px",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-              onClick={() => {
-                const doc = new jsPDF();
-                doc.text("Payment Report", 10, 10);
-                doc.text("Claim ID: CLM-003", 10, 20);
-                doc.text("Total Limit: LKR 10,000", 10, 30);
-                doc.text("Deducted: LKR 7,000", 10, 40);
-                doc.text("Remaining: LKR 3,000", 10, 50);
-                doc.save("test.pdf");
-              }}
-            >
-              📥 Download Report
-            </button>
-          </div>
+      doc.text(
+        `Applicant Claim Amount: LKR ${Number(
+          claim.claimAmount || 0
+        ).toLocaleString()}`,
+        10,
+        60
+      );
 
+      doc.text(
+        `Finalized Claimed Amount: LKR ${Number(
+          claim.claimedAmount || 0
+        ).toLocaleString()}`,
+        10,
+        70
+      );
+
+      doc.text(`Payment Status: ${claim.status}`, 10, 80);
+
+      if (paymentData.length > 0) {
+        doc.text(`Payment Date: ${paymentData[0].date}`, 10, 90);
+        doc.text(
+          `Paid Amount: LKR ${Number(
+            paymentData[0].amount || 0
+          ).toLocaleString()}`,
+          10,
+          100
+        );
+        doc.text(`Payment Method: ${paymentData[0].method}`, 10, 110);
+      }
+
+      doc.save(`${claim.id}_payment_report.pdf`);
+    }}
+  >
+    📥 Download Report
+  </button>
+</div>
+          
           {/* TABLE */}
           <table
             style={{
@@ -210,36 +265,57 @@ const PaymentHistory = () => {
             }}
           >
             <thead>
-              <tr style={{ background: "#0b1f3a", color: "white" }}>
-                <th style={{ padding: "10px" }}>Date</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>Status</th>
-              </tr>
-            </thead>
+  <tr style={{ background: "#0b1f3a", color: "white" }}>
+    <th style={{ padding: "10px" }}>Payment</th>
+    <th>Amount</th>
+    <th>Method</th>
+    <th>Status</th>
+  </tr>
+</thead>
 
             <tbody>
-              {paymentData.map((row, index) => (
-                <tr key={index} style={{ textAlign: "center" }}>
-                  <td style={{ padding: "10px" }}>{row.date}</td>
-                  <td><b>{row.amount}</b></td>
-                  <td>{row.method}</td>
-                  <td>
-                    <span
-                      style={{
-                        background: "#e6f4ea",
-                        color: "#2fa86c",
-                        padding: "4px 10px",
-                        borderRadius: "20px",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {loading ? (
+    <tr>
+      <td colSpan="4" style={{ padding: "20px", textAlign: "center" }}>
+        Loading payment history...
+      </td>
+    </tr>
+  ) : paymentData.length === 0 ? (
+    <tr>
+      <td colSpan="4" style={{ padding: "20px", textAlign: "center" }}>
+        No payment history found.
+      </td>
+    </tr>
+  ) : (
+    paymentData.map((row, index) => (
+      <tr key={index} style={{ textAlign: "center" }}>
+        <td style={{ padding: "10px" }}>{row.date}</td>
+
+        <td>
+          <b>
+            LKR {Number(row.amount || 0).toLocaleString()}
+          </b>
+        </td>
+
+        <td>{row.method}</td>
+
+        <td>
+          <span
+            style={{
+              background: "#e6f4ea",
+              color: "#2fa86c",
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "12px",
+            }}
+          >
+            {row.status}
+          </span>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
           </table>
 
         </main>

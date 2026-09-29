@@ -26,4 +26,4 @@ dist-ssr
 backend/__pycache__/
 backend/uploads/
 *.pyc
-.env
+.envbackend/routes/uploads/
